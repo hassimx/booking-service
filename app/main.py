@@ -59,6 +59,9 @@ async def add_headers(request, call_next):
     path = request.url.path
     if path.startswith("/api/"):
         response.headers["Cache-Control"] = "no-store"
+    elif "Cache-Control" not in response.headers:
+        # browsers ask again before reusing a file, so a new deploy shows up at once
+        response.headers["Cache-Control"] = "no-cache"
     # swagger pages load their own scripts, so they are left out of the policy
     if not path.startswith(("/docs", "/redoc", "/openapi.json")):
         response.headers["Content-Security-Policy"] = "default-src 'self'; img-src 'self' data:; frame-ancestors 'none'"
