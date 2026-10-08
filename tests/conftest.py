@@ -16,6 +16,7 @@ os.environ["ADMIN_USERNAME"] = ADMIN_USERNAME
 os.environ["ADMIN_PASSWORD_HASH"] = hash_password(ADMIN_PASSWORD)
 os.environ["TIMEZONE"] = "Asia/Almaty"
 os.environ["COOKIE_SECURE"] = "false"
+os.environ["DAYS_AHEAD"] = "30"
 
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy import select  # noqa: E402
