@@ -37,7 +37,7 @@ def find_booking(db: Session, code: str, phone: str) -> Booking | None:
     return booking
 
 
-@router.get("/shop", response_model=ShopOut)
+@router.get("/shop", response_model=ShopOut, summary="Shop info and working hours")
 def shop_info(db: Session = Depends(get_db)):
     settings = get_settings()
     return {
@@ -49,12 +49,12 @@ def shop_info(db: Session = Depends(get_db)):
     }
 
 
-@router.get("/services", response_model=list[ServiceOut])
+@router.get("/services", response_model=list[ServiceOut], summary="List services that can be booked")
 def list_services(db: Session = Depends(get_db)):
     return db.scalars(select(Service).where(Service.is_active).order_by(Service.id)).all()
 
 
-@router.get("/slots", response_model=SlotsOut)
+@router.get("/slots", response_model=SlotsOut, summary="List free start times for a service on one day")
 def list_free_times(
     service_id: int,
     day: date = Query(alias="date"),
@@ -65,7 +65,16 @@ def list_free_times(
     return {"date": day, "service_id": service.id, "times": [s.strftime("%H:%M") for s in starts]}
 
 
-@router.post("/bookings", response_model=BookingOut, status_code=201)
+@router.post(
+    "/bookings",
+    response_model=BookingOut,
+    status_code=201,
+    summary="Create a booking",
+    responses={
+        409: {"description": "This time is already taken"},
+        422: {"description": "Bad input, or the time is in the past or outside working hours"},
+    },
+)
 def book(data: BookingCreate, db: Session = Depends(get_db)):
     service = get_active_service(db, data.service_id)
     try:
@@ -77,7 +86,7 @@ def book(data: BookingCreate, db: Session = Depends(get_db)):
 
 
 # POST instead of GET so the phone number does not end up in URLs and server logs
-@router.post("/bookings/lookup", response_model=BookingOut)
+@router.post("/bookings/lookup", response_model=BookingOut, summary="Find a booking by code and phone")
 def lookup_booking(data: BookingLookup, db: Session = Depends(get_db)):
     booking = find_booking(db, data.code, data.client_phone)
     if booking is None:
@@ -85,7 +94,12 @@ def lookup_booking(data: BookingLookup, db: Session = Depends(get_db)):
     return booking
 
 
-@router.post("/bookings/{code}/cancel", response_model=BookingOut)
+@router.post(
+    "/bookings/{code}/cancel",
+    response_model=BookingOut,
+    summary="Cancel a booking by code and phone",
+    responses={409: {"description": "Already cancelled, or the booking has already started"}},
+)
 def cancel_my_booking(code: str, data: PhoneIn, db: Session = Depends(get_db)):
     booking = find_booking(db, code, data.client_phone)
     if booking is None:

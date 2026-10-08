@@ -33,7 +33,7 @@ def require_admin(request: Request):
 router = APIRouter(tags=["admin"], dependencies=[Depends(require_admin)])
 
 
-@auth_router.post("/login")
+@auth_router.post("/login", summary="Log in and get the session cookie")
 def login(data: LoginIn, request: Request):
     settings = get_settings()
     if not settings.admin_username or not settings.admin_password_hash:
@@ -56,17 +56,17 @@ def login(data: LoginIn, request: Request):
     return {"username": settings.admin_username}
 
 
-@auth_router.post("/logout", status_code=204)
+@auth_router.post("/logout", status_code=204, summary="Log out")
 def logout(request: Request):
     request.session.clear()
 
 
-@router.get("/me")
+@router.get("/me", summary="Check that the session is valid")
 def me():
     return {"username": get_settings().admin_username}
 
 
-@router.get("/bookings", response_model=list[AdminBookingOut])
+@router.get("/bookings", response_model=list[AdminBookingOut], summary="List the bookings of one day")
 def list_bookings(
     day: date = Query(alias="date"),
     status: StatusFilter = StatusFilter.active,
@@ -84,7 +84,7 @@ def list_bookings(
     return db.scalars(query).all()
 
 
-@router.post("/bookings/{booking_id}/cancel", response_model=AdminBookingOut)
+@router.post("/bookings/{booking_id}/cancel", response_model=AdminBookingOut, summary="Cancel any booking")
 def cancel_any_booking(booking_id: int, db: Session = Depends(get_db)):
     booking = db.get(Booking, booking_id)
     if booking is None:
@@ -95,12 +95,12 @@ def cancel_any_booking(booking_id: int, db: Session = Depends(get_db)):
     return booking
 
 
-@router.get("/services", response_model=list[ServiceOut])
+@router.get("/services", response_model=list[ServiceOut], summary="List all services, hidden ones too")
 def list_all_services(db: Session = Depends(get_db)):
     return db.scalars(select(Service).order_by(Service.id)).all()
 
 
-@router.post("/services", response_model=ServiceOut, status_code=201)
+@router.post("/services", response_model=ServiceOut, status_code=201, summary="Add a service")
 def add_service(data: ServiceIn, db: Session = Depends(get_db)):
     service = Service(**data.model_dump())
     db.add(service)
@@ -108,7 +108,7 @@ def add_service(data: ServiceIn, db: Session = Depends(get_db)):
     return service
 
 
-@router.patch("/services/{service_id}", response_model=ServiceOut)
+@router.patch("/services/{service_id}", response_model=ServiceOut, summary="Edit, hide or show a service")
 def edit_service(service_id: int, data: ServiceUpdate, db: Session = Depends(get_db)):
     service = db.get(Service, service_id)
     if service is None:
@@ -121,13 +121,13 @@ def edit_service(service_id: int, data: ServiceUpdate, db: Session = Depends(get
     return service
 
 
-@router.get("/hours", response_model=list[HoursOut])
+@router.get("/hours", response_model=list[HoursOut], summary="Get working hours for all weekdays")
 def get_hours(db: Session = Depends(get_db)):
     return db.scalars(select(WorkingHours).order_by(WorkingHours.weekday)).all()
 
 
 # changing hours does not touch bookings that already exist
-@router.put("/hours", response_model=list[HoursOut])
+@router.put("/hours", response_model=list[HoursOut], summary="Save working hours for all weekdays")
 def set_hours(data: HoursWeek, db: Session = Depends(get_db)):
     for day in data.days:
         row = db.get(WorkingHours, day.weekday)
