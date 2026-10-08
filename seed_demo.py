@@ -75,7 +75,7 @@ def main():
             attempts += 1
             service = rng.choices(services, WEIGHTS)[0]
             # closer days are busier
-            day = rng.choices(open_days, [15 - (d - today).days for d in open_days])[0]
+            day = rng.choices(open_days, [30 - (d - today).days for d in open_days])[0]
             starts = free_start_times(db, service, day, now=start_of_today)
             if not starts:
                 continue
