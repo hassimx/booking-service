@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: nord-booking
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # seed_demo.py does nothing when the database already has data
+    startCommand: "python seed_demo.py && uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'"
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ADMIN_USERNAME
+        value: admin
+      # paste the hash from create_env.py in the Render dashboard
+      - key: ADMIN_PASSWORD_HASH
+        sync: false
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: TIMEZONE
+        value: Asia/Almaty
