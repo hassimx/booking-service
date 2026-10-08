@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Nord Staff - Admin</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script type="module" src="/static/js/admin.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap wrap-wide bar">
+      <a class="brand" href="/admin">Nord <small>Staff</small></a>
+      <nav id="top-nav" hidden>
+        <a href="/">View site</a>
+        <button class="btn btn-quiet btn-small" type="button" id="logout-button">Log out</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap wrap-wide admin-main">
+    <section class="wrap-narrow card" id="login-view" hidden>
+      <h1>Staff login</h1>
+      <form id="login-form">
+        <div class="field">
+          <label for="username">Username</label>
+          <input id="username" type="text" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" type="password" autocomplete="current-password" required>
+        </div>
+        <p class="error" id="login-error" role="alert" hidden></p>
+        <button class="btn" type="submit">Log in</button>
+      </form>
+    </section>
+
+    <div id="dashboard" hidden>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tab-bookings" data-panel="panel-bookings" aria-selected="true" type="button">Bookings</button>
+        <button class="tab" role="tab" id="tab-services" data-panel="panel-services" aria-selected="false" type="button">Services</button>
+        <button class="tab" role="tab" id="tab-hours" data-panel="panel-hours" aria-selected="false" type="button">Working hours</button>
+      </div>
+      <p class="success" id="flash" role="status" hidden></p>
+      <p class="error" id="admin-error" role="alert" hidden></p>
+
+      <section id="panel-bookings" role="tabpanel" aria-labelledby="tab-bookings">
+        <div class="toolbar">
+          <button class="btn btn-quiet btn-small" type="button" id="prev-day" aria-label="Previous day">&larr;</button>
+          <input type="date" id="day-input" aria-label="Day">
+          <button class="btn btn-quiet btn-small" type="button" id="next-day" aria-label="Next day">&rarr;</button>
+          <button class="btn btn-quiet btn-small" type="button" id="today-button">Today</button>
+          <div class="segmented" role="radiogroup" aria-label="Status">
+            <label><input type="radio" name="status" value="active" checked><span>Active</span></label>
+            <label><input type="radio" name="status" value="cancelled"><span>Cancelled</span></label>
+            <label><input type="radio" name="status" value="all"><span>All</span></label>
+          </div>
+        </div>
+        <p class="day-summary" id="day-summary"></p>
+        <div id="bookings-list"></div>
+      </section>
+
+      <section id="panel-services" role="tabpanel" aria-labelledby="tab-services" hidden>
+        <div id="services-list"></div>
+        <form class="card add-service" id="service-form">
+          <h2>Add a service</h2>
+          <div class="field-row">
+            <div class="field">
+              <label for="new-name">Name</label>
+              <input id="new-name" type="text" maxlength="60" required>
+            </div>
+            <div class="field">
+              <label for="new-duration">Duration</label>
+              <select id="new-duration"></select>
+            </div>
+            <div class="field">
+              <label for="new-price">Price</label>
+              <input id="new-price" type="number" min="0" max="1000000" step="100" required>
+            </div>
+          </div>
+          <button class="btn" type="submit">Add service</button>
+        </form>
+      </section>
+
+      <section id="panel-hours" role="tabpanel" aria-labelledby="tab-hours" hidden>
+        <form class="card" id="hours-form">
+          <h2>Working hours</h2>
+          <p class="muted">Times are in the shop timezone. Bookings that already exist are not changed.</p>
+          <div id="hours-rows"></div>
+          <p></p>
+          <button class="btn" type="submit">Save hours</button>
+        </form>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
