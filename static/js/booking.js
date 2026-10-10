@@ -112,6 +112,56 @@ function updateSummary() {
   );
 }
 
+async function askAssistant(event) {
+  event.preventDefault();
+  const text = $('#assistant-text').value.trim();
+  if (text.length < 2) return;
+  const button = $('#assistant-button');
+  button.disabled = true;
+  setText('#assistant-note', 'Looking for free times...');
+  $('#assistant-list').replaceChildren();
+  try {
+    const answer = await api('/api/assistant', { method: 'POST', body: { text } });
+    const parts = [];
+    if (answer.service) parts.push(`${answer.service.name}:`);
+    if (answer.suggestions.length) parts.push('pick a time below.');
+    if (answer.message) parts.push(answer.message);
+    setText('#assistant-note', parts.join(' '));
+    $('#assistant-list').append(
+      ...answer.suggestions.map((s) =>
+        h('button', {
+          type: 'button',
+          class: 'chip chip-button',
+          onclick: () => applySuggestion(answer.service.id, s.date, s.time),
+        }, h('span', { class: 'chip-body' }, `${formatDay(parseDay(s.date))}, ${s.time}`)),
+      ),
+    );
+  } catch (error) {
+    setText('#assistant-note', error.message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function applySuggestion(serviceId, day, time) {
+  const serviceInput = document.querySelector(`input[name="service"][value="${serviceId}"]`);
+  if (serviceInput) serviceInput.checked = true;
+  state.service = state.services.find((service) => service.id === serviceId);
+  $('#step-date').hidden = false;
+  const dayInput = document.querySelector(`input[name="date"][value="${day}"]`);
+  if (dayInput) dayInput.checked = true;
+  state.date = day;
+  await refreshTimes();
+  const timeInput = document.querySelector(`input[name="time"][value="${time}"]`);
+  if (timeInput) {
+    timeInput.checked = true;
+    state.time = time;
+  }
+  updateSummary();
+  $('#step-details').scrollIntoView({ block: 'center' });
+  $('#name').focus({ preventScroll: true });
+}
+
 async function refreshTimes() {
   if (!state.service || !state.date) return;
   const request = ++state.request;
@@ -296,6 +346,7 @@ async function start() {
     updateSummary();
   });
   $('#booking-form').addEventListener('submit', submitBooking);
+  $('#assistant-form').addEventListener('submit', askAssistant);
   $('#again-button').addEventListener('click', bookAnother);
   $('#lookup-form').addEventListener('submit', lookupBooking);
 }

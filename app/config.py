@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     shop_name: str = "Nord"
     currency: str = "₸"
     days_ahead: int = 30
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash"
 
 
 @lru_cache

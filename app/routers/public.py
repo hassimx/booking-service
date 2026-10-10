@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.config import get_settings
 from app.database import get_db
 from app.models import Booking, Service, WorkingHours
+from app.assistant import suggest
 from app.scheduling import (
     BadTimeError,
     SlotTakenError,
@@ -15,7 +16,7 @@ from app.scheduling import (
     create_booking,
     free_start_times,
 )
-from app.schemas import BookingCreate, BookingLookup, BookingOut, PhoneIn, ServiceOut, ShopOut, SlotsOut
+from app.schemas import AssistantIn, BookingCreate, BookingLookup, BookingOut, PhoneIn, ServiceOut, ShopOut, SlotsOut
 from app.timeutils import local_now
 
 router = APIRouter(tags=["public"])
@@ -110,3 +111,9 @@ def cancel_my_booking(code: str, data: PhoneIn, db: Session = Depends(get_db)):
         raise HTTPException(409, "This booking has already started, please call us")
     cancel_booking(db, booking)
     return booking
+
+
+@router.post("/assistant", summary="Understand a free-text request and suggest free times")
+def booking_assistant(data: AssistantIn, db: Session = Depends(get_db)):
+    services = list(db.scalars(select(Service).where(Service.is_active).order_by(Service.id)))
+    return suggest(db, data.text, services)

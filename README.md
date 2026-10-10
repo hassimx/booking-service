@@ -74,6 +74,16 @@ python -m pytest
 
 The tests use a temporary database, so they never touch your real one. They cover double booking, overlapping bookings of different lengths, cancelling, the phone check and the admin login.
 
+## Booking assistant (AI)
+
+Above the booking form there is one text field. A client can write what they want in their own words, in English or Russian, for example "haircut tomorrow after 5" or "стрижка и борода в субботу утром". The assistant picks the service, the day and the time window and shows up to three free times. One click fills in the form.
+
+- With `GEMINI_API_KEY` set, Gemini reads the request and returns the service, date and time window as JSON.
+- Without a key, or if the AI call fails, a rule-based parser handles common phrases (today, tomorrow, weekdays, dates like 15.10, "after 5", "at 14:30", morning and evening).
+- The AI only understands the request. Free times always come from the database, so it cannot suggest a time that is taken or outside working hours.
+
+The endpoint is `POST /api/assistant` with `{"text": "..."}`. The code is in `app/assistant.py`.
+
 ## How double bookings are stopped
 
 Services have different lengths, so a unique start time is not enough. A 60 minute haircut at 10:00 and a 30 minute beard trim at 10:30 start at different times but overlap.

@@ -28,6 +28,17 @@
     </section>
 
     <section id="book" aria-label="Booking">
+      <form class="assistant" id="assistant-form" novalidate>
+        <label for="assistant-text">Just tell us what you need</label>
+        <div class="assistant-row">
+          <input id="assistant-text" type="text" maxlength="300" autocomplete="off"
+            placeholder="haircut tomorrow after 5, стрижка в субботу утром">
+          <button class="btn" type="submit" id="assistant-button">Find a time</button>
+        </div>
+        <p class="hint" id="assistant-note" role="status"></p>
+        <div class="time-list" id="assistant-list"></div>
+      </form>
+
       <form id="booking-form" novalidate>
         <section class="step">
           <h2 class="step-title"><span class="num">1</span> Service</h2>

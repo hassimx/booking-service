@@ -85,6 +85,12 @@ class BookingCreate(BaseModel):
     _check_phone = field_validator("client_phone")(clean_phone)
 
 
+class AssistantIn(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    text: str = Field(min_length=2, max_length=300, examples=["haircut tomorrow after 5"])
+
+
 class BookingLookup(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 

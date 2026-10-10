@@ -18,3 +18,5 @@ services:
         value: "true"
       - key: TIMEZONE
         value: Asia/Almaty
+      - key: GEMINI_API_KEY
+        sync: false

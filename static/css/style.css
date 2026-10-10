@@ -492,3 +492,11 @@ input:disabled { background: transparent; color: var(--muted); }
   .hours-row input[type="time"] { width: 100%; }
   .tab { padding: 0.5rem 0.75rem; }
 }
+
+/* booking assistant */
+.assistant { margin: 0 0 2rem; }
+.assistant label { display: block; font-weight: 600; margin-bottom: .4rem; }
+.assistant-row { display: flex; gap: .5rem; }
+.assistant-row input { flex: 1; min-width: 0; }
+.chip-button { cursor: pointer; font: inherit; background: none; border: 0; padding: 0; color: inherit; }
+@media (max-width: 560px) { .assistant-row { flex-direction: column; } }
