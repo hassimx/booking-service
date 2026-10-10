@@ -58,15 +58,28 @@ class Request:
     after: time | None = None
     before: time | None = None
     source: str = "rules"
+    weekday: bool = False  # the day came from a weekday name, so next week also fits
 
 
-def service_terms(service: Service) -> list[str]:
-    name = service.name.lower()
-    terms = [name]
-    for key, words in SYNONYMS.items():
-        if key in name or any(w in name for w in words):
-            terms += words
-    return terms
+def groups_in(text: str) -> set[str]:
+    return {key for key, words in SYNONYMS.items() if key in text or any(w in text for w in words)}
+
+
+def rank_services(text: str, services: list[Service]) -> list[int]:
+    """Best match first: the full service name, then the most shared words and the fewest extra ones."""
+    wanted = groups_in(text)
+    scored = []
+    for service in services:
+        name = service.name.lower()
+        if name in text:
+            scored.append((100, service.id))
+            continue
+        has = groups_in(name)
+        matched = len(has & wanted)
+        if matched:
+            scored.append((matched * 10 - len(has - wanted) * 3, service.id))
+    scored.sort(key=lambda item: (-item[0], item[1]))
+    return [service_id for _, service_id in scored]
 
 
 def hour_from(text: str, pm_hint: bool) -> time | None:
@@ -88,9 +101,7 @@ def parse_with_rules(text: str, services: list[Service], today: date) -> Request
     low = " " + text.lower().strip() + " "
     request = Request(source="rules")
 
-    for service in services:
-        if any(term in low for term in service_terms(service)):
-            request.service_ids.append(service.id)
+    request.service_ids = rank_services(low, services)
 
     if re.search(r"day after tomorrow|послезавтра", low):
         request.day = today + timedelta(days=2)
@@ -103,6 +114,7 @@ def parse_with_rules(text: str, services: list[Service], today: date) -> Request
             if en in low or ru in low:
                 ahead = (index - today.weekday()) % 7
                 request.day = today + timedelta(days=ahead)
+                request.weekday = True
                 break
         date_match = re.search(r"(\d{1,2})[./](\d{1,2})(?![\d:])", low)
         if request.day is None and date_match:
@@ -142,7 +154,7 @@ def parse_with_gemini(text: str, services: list[Service], today: date) -> Reques
     prompt = (
         "You read booking requests for a barbershop. Today is "
         f"{today.isoformat()} ({today.strftime('%A')}). Services: {json.dumps(menu, ensure_ascii=False)}.\n"
-        "Reply with JSON only: {\"service_ids\": [ids the client wants, in order], "
+        "Reply with JSON only: {\"service_ids\": [the best matching service id first], "
         "\"date\": \"YYYY-MM-DD\" or null, \"after\": \"HH:MM\" or null, \"before\": \"HH:MM\" or null}. "
         "The request can be in English or Russian. If the client gives one time, set after to it and before "
         "to one hour later. Do not invent a date or time the client did not ask for.\n"
@@ -192,9 +204,13 @@ def suggest(db: Session, text: str, services: list[Service], limit: int = 3) -> 
         return {"source": request.source, "service": None, "suggestions": [],
                 "message": "I could not tell which service you want. Try naming it, for example \"haircut\"."}
 
-    # a combo like "haircut and beard" is booked as the first service; the client adds the second one
     service = next(s for s in services if s.id == request.service_ids[0])
-    days = [request.day] if request.day else [today + timedelta(days=i) for i in range(8)]
+    if request.day is None:
+        days = [today + timedelta(days=i) for i in range(8)]
+    elif request.weekday and request.day == today:
+        days = [today, today + timedelta(days=7)]  # "on saturday" late on a saturday means next week too
+    else:
+        days = [request.day]
     suggestions = []
     for day in days:
         if day < today:
@@ -211,12 +227,7 @@ def suggest(db: Session, text: str, services: list[Service], limit: int = 3) -> 
         if len(suggestions) >= limit:
             break
 
-    message = None
-    if not suggestions:
-        message = "No free time matches this request. Try another day or a wider time."
-    elif len(request.service_ids) > 1:
-        names = [s.name for s in services if s.id in request.service_ids[1:]]
-        message = f"Book {service.name} first, then add {', '.join(names)} as a second booking."
+    message = None if suggestions else "No free time matches this request. Try another day or a wider time."
     return {
         "source": request.source,
         "service": {"id": service.id, "name": service.name},
